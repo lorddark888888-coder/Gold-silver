@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Saith Gold Palaces — Daily Record</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f1e7;color:#241d12}
+.app{max-width:1200px;margin:auto;min-height:100vh}.hero{padding:24px;color:#fff;border-radius:0 0 24px 24px;background:linear-gradient(135deg,#4b2d08,#b97910 48%,#f1c85b 75%,#6b4109)}
+.hero h1{margin:0;font-size:30px}.hero p{margin:7px 0 0}.grid{display:grid;grid-template-columns:1fr 1.35fr;gap:16px;padding:16px}
+.card{background:#fff;border-radius:17px;padding:18px;box-shadow:0 5px 20px #0001}h2{margin:0 0 14px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tab,button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}.tab{background:#eee3cf}.tab.active{background:#a86f0a;color:#fff}
+label{display:block;font-size:12px;font-weight:700;margin:10px 0 5px}input,select{width:100%;padding:11px;border:1px solid #d8cdbb;border-radius:9px;font-size:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.calc{margin-top:14px;padding:14px;border-radius:12px;background:#f7efd9}.total{font-size:26px;font-weight:800;color:#986306}.save{width:100%;margin-top:12px;background:#8f5c08;color:#fff}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}.stat{padding:12px;background:#faf7f0;border-radius:12px}.stat b{display:block;font-size:18px;margin-top:4px}
+.toolbar{display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:8px;margin:10px 0}.secondary{background:#eee3cf}.danger{background:#b43b2f;color:#fff}
+.tablewrap{overflow:auto;max-height:480px}table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}th,td{padding:9px;border-bottom:1px solid #eee;text-align:left;white-space:nowrap}th{background:#faf7f0;position:sticky;top:0}.small{font-size:12px;color:#776d5d}.gold{color:#a96c00}.green{color:#287c45}.red{color:#b43b2f}.actions button{padding:6px 8px;margin-right:4px}
+footer{padding:0 16px 20px}.hidden{display:none}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.row{grid-template-columns:1fr}.hero h1{font-size:25px}.grid{padding:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="hero">
+<h1>SAITH GOLD PALACES</h1>
+<p>Gold • Silver • Daily Record • Monthly & Yearly Summary</p>
+</header>
+
+<main class="grid">
+<section class="card">
+<h2 id="formTitle">Daily Entry</h2>
+<div class="tabs" id="metalTabs">
+<button type="button" class="tab active" data-metal="gold">🟡 Gold</button>
+<button type="button" class="tab" data-metal="silver">⚪ Silver</button>
+</div>
+
+<div class="row">
+<div><label>Date</label><input id="date" type="date"></div>
+<div><label>Customer / Party</label><input id="name" placeholder="Name"></div>
+</div>
+<div class="row">
+<div><label id="weightLabel">Gold Weight (tola)</label><input id="weight" type="number" step="0.001" placeholder="e.g. 10"></div>
+<div><label>Rate per tola (PKR)</label><input id="rate" type="number" step="1" placeholder="e.g. 435000" oninput="calculate()"></div>
+</div>
+<div class="row">
+<div><label>Type / Chase</label><select id="type"><option>Purchase</option><option>Sale</option><option>Exchange</option><option>Cash</option></select></div>
+<div><label>Notes</label><input id="notes" placeholder="Optional"></div>
+</div>
+
+<div class="calc"><div class="small">Automatically calculated</div><div class="total" id="total">PKR 0</div><div class="small">Weight × Rate</div></div>
+<button class="save" onclick="saveEntry()" id="saveBtn">Save Daily Record</button>
+<button class="secondary" style="width:100%;margin-top:8px" onclick="clearForm()">Clear</button>
+<p class="small" id="storageStatus">Storage: checking…</p>
+</section>
+
+<section class="card">
+<h2>Dashboard</h2>
+<div class="stats">
+<div class="stat">Gold entries<b id="goldCount">0</b></div>
+<div class="stat">Silver entries<b id="silverCount">0</b></div>
+<div class="stat">Gold value<b id="goldValue">PKR 0</b></div>
+<div class="stat">Silver value<b id="silverValue">PKR 0</b></div>
+</div>
+
+<div class="toolbar">
+<input id="search" placeholder="Search name..." oninput="render()">
+<input id="from" type="date" onchange="render()">
+<input id="to" type="date" onchange="render()">
+<button class="secondary" onclick="exportCSV()">Export CSV</button>
+<button class="secondary" onclick="backupJSON()">Backup</button>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:10px">
+<label style="margin:0;flex:1">Year:
+<select id="year" onchange="renderYear()"></select></label>
+<div style="flex:2;padding:10px;background:#faf7f0;border-radius:10px"><b id="yearSummary">Year total: PKR 0</b></div>
+</div>
+
+<div class="tablewrap">
+<table><thead><tr><th>Date</th><th>Metal</th><th>Name</th><th>Type</th><th>Qty</th><th>Rate</th><th>Value</th><th>Action</th></tr></thead>
+<tbody id="records"></tbody></table>
+</div>
+<p class="small" id="recordCount"></p>
+</section>
+</main>
+<footer>
+<label class="secondary" style="display:inline-block;padding:10px 12px;border-radius:9px;cursor:pointer">
+Import Backup <input id="importFile" type="file" accept=".json" class="hidden" onchange="importJSON(event)">
+</label>
+<button class="danger" onclick="clearAll()">Delete All Records</button>
+</footer>
+</div>
+
+<script>
+let metal='gold', editId=null;
+let records=[];
+const DB_NAME='SaithGoldPalacesDB', DB_VERSION=1, STORE='records';
+let db=null;
+const $=id=>document.getElementById(id);
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    if(!window.indexedDB){resolve(null);return}
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'id'})};
+    req.onsuccess=e=>{db=e.target.result;resolve(db)};
+    req.onerror=()=>resolve(null);
+  });
+}
+async function loadRecords(){
+  try{
+    const d=await openDB();
+    if(d){
+      records=await new Promise(resolve=>{
+        const q=d.transaction(STORE,'readonly').objectStore(STORE).getAll();
+        q.onsuccess=()=>resolve(q.result||[]);
+        q.onerror=()=>resolve([]);
+      });
+      if(records.length){render();return}
+    }
+  }catch(e){}
+  try{records=JSON.parse(localStorage.getItem('saithGoldRecords')||'[]')}catch(e){records=[]}
+  render();
+}
+async function persist(){
+  try{
+    if(db){
+      const tx=db.transaction(STORE,'readwrite'), st=tx.objectStore(STORE);
+      st.clear(); records.forEach(x=>st.put(x));
+    }
+  }catch(e){}
+  try{localStorage.setItem('saithGoldRecords',JSON.stringify(records))}catch(e){}
+}
+$('date').value=new Date().toISOString().slice(0,10);
+
+function money(n){return 'PKR '+Number(n||0).toLocaleString('en-PK')}
+function setMetal(m,el){
+  metal=m;
+  document.querySelectorAll('#metalTabs .tab').forEach(x=>x.classList.toggle('active',x.dataset.metal===m));
+  $('weightLabel').textContent=(m==='gold'?'Gold':'Silver')+' Weight (tola)';
+  $('rate').placeholder=m==='gold'?'e.g. 435000':'e.g. 5200';
+}
+function calculate(){let w=+$('weight').value||0,r=+$('rate').value||0;$('total').textContent=money(w*r)}
+function clearForm(){editId=null;$('formTitle').textContent='Daily Entry';$('saveBtn').textContent='Save Daily Record';$('name').value='';$('weight').value='';$('rate').value='';$('notes').value='';calculate()}
+function saveEntry(){
+ let w=+$('weight').value||0,r=+$('rate').value||0;if(!w||!r){alert('Weight aur rate enter karein.');return}
+ let item={id:editId||Date.now().toString(),date:$('date').value,name:$('name').value.trim()||'-',metal,weight:w,rate:r,value:w*r,type:$('type').value,notes:$('notes').value.trim()};
+ if(editId) records=records.map(x=>x.id===editId?item:x); else records.unshift(item);
+ persist();clearForm();render();
+}
+function editEntry(id){
+ let x=records.find(r=>r.id===id);if(!x)return;editId=id;$('formTitle').textContent='Edit Record';$('saveBtn').textContent='Update Record';
+ $('date').value=x.date;$('name').value=x.name;$('weight').value=x.weight;$('rate').value=x.rate;$('type').value=x.type;$('notes').value=x.notes||'';
+ metal=x.metal;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab')[metal==='gold'?0:1].classList.add('active');setMetal(metal,document.querySelectorAll('.tab')[metal==='gold'?0:1]);calculate();scrollTo({top:0,behavior:'smooth'});
+}
+function deleteEntry(id){if(confirm('Delete this record?')){records=records.filter(x=>x.id!==id);persist();render()}}
+function filtered(){
+ let q=$('search').value.toLowerCase(),f=$('from').value,t=$('to').value;
+ return records.filter(x=>(!q||x.name.toLowerCase().includes(q)||x.type.toLowerCase().includes(q))&&(!f||x.date>=f)&&(!t||x.date<=t));
+}
+function render(){
+ let list=filtered(),tbody=$('records');tbody.innerHTML='';
+ list.forEach(x=>tbody.innerHTML+=`<tr><td>${x.date}</td><td class="${x.metal==='gold'?'gold':'green'}">${x.metal}</td><td>${esc(x.name)}</td><td>${x.type}</td><td>${x.weight}</td><td>${money(x.rate)}</td><td>${money(x.value)}</td><td class="actions"><button onclick="editEntry('${x.id}')">Edit</button><button class="danger" onclick="deleteEntry('${x.id}')">Delete</button></td></tr>`);
+ let g=records.filter(x=>x.metal==='gold'),s=records.filter(x=>x.metal==='silver');
+ $('goldCount').textContent=g.length;$('silverCount').textContent=s.length;$('goldValue').textContent=money(g.reduce((a,x)=>a+x.value,0));$('silverValue').textContent=money(s.reduce((a,x)=>a+x.value,0));
+ $('recordCount').textContent=`Showing ${list.length} of ${records.length} records`;
+ renderYear();
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function renderYear(){
+ let years=[...new Set(records.map(x=>x.date.slice(0,4)))].sort().reverse();if(!years.length)years=[new Date().getFullYear().toString()];
+ let old=$('year').value;$('year').innerHTML=years.map(y=>`<option>${y}</option>`).join('');if(years.includes(old))$('year').value=old;
+ let y=$('year').value||years[0],v=records.filter(x=>x.date.startsWith(y)).reduce((a,x)=>a+x.value,0);$('yearSummary').textContent=`${y} total: ${money(v)}`;
+}
+function exportCSV(){
+ let rows=[['Date','Metal','Name','Type','Weight (tola)','Rate per tola','Value','Notes'],...records.map(x=>[x.date,x.metal,x.name,x.type,x.weight,x.rate,x.value,x.notes||''])];
+ let csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+ let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='saith-gold-records.csv';a.click();
+}
+function backupJSON(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(records,null,2)],{type:'application/json'}));a.download='saith-gold-backup.json';a.click()}
+function importJSON(e){let file=e.target.files[0];if(!file)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x))throw 0;records=x;persist();render();alert('Backup imported successfully.')}catch{alert('Invalid backup file.')}};r.readAsText(file)}
+function clearAll(){if(records.length&&confirm('Delete ALL records? This cannot be undone.')){records=[];persist();render()}}
+document.querySelectorAll('#metalTabs .tab').forEach(btn=>btn.addEventListener('click',()=>setMetal(btn.dataset.metal,btn)));
+$('date').value=new Date().toISOString().slice(0,10);
+calculate();
+loadRecords().then(()=>{$('storageStatus').textContent='Storage: ON — records are saved on this device/browser.'});
+</script>
+</body>
+</html>
